@@ -1,55 +1,102 @@
 package com.vishalchauhan0688.journalApp.controller;
 
 import com.vishalchauhan0688.journalApp.entity.JournalEntry;
+import com.vishalchauhan0688.journalApp.service.JournalEntryService;
+import org.bson.types.ObjectId;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.time.LocalDateTime;
+import java.util.*;
 
 @RestController
 @RequestMapping("/journal")
 public class JournalEntryController {
 
-    private Map<Long, JournalEntry> journalEntries = new HashMap<>();
+    @Autowired
+    JournalEntryService journalEntryService;
 
     @GetMapping
-    public List<JournalEntry> getAll(){
-        System.out.println("OK");
+    public ResponseEntity<?> getAll(){
 
-        return new ArrayList<>(journalEntries.values());
+       try{
+           List<JournalEntry> all =  journalEntryService.getAll();
+           if(all != null && !all.isEmpty()){
+               return new ResponseEntity<>(all, HttpStatus.OK);
+           }
+
+           return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+       }
+       catch (Exception e){
+           System.out.println(e.getMessage());
+           return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+       }
     }
 
     @PostMapping
     public boolean createEntry(@RequestBody JournalEntry myEntry){
-        System.out.println("fuck you in post");
-        this.journalEntries.put(myEntry.getId(),myEntry);
 
+        myEntry.setDate(LocalDateTime.now());
+
+        journalEntryService.save(myEntry);
         return true;
-
     }
     @GetMapping("/{myId}")
-    public JournalEntry getById(@PathVariable Long myId){
-        System.out.println("Fetching entry with ID: " + myId);
-        JournalEntry entry = journalEntries.get(myId);
-        System.out.println("Entry found: " + entry.toString());
-        return entry;
-    }
-    @DeleteMapping("/{myId}")
-    public String deleteById(@PathVariable Long myId){
-        journalEntries.remove(myId);
+    public ResponseEntity<JournalEntry> getById(@PathVariable ObjectId myId){
 
-        return "ok";
+        try{
+            Optional<JournalEntry> myJournalEntry = journalEntryService.findById(myId);
+
+            if (myJournalEntry.isEmpty()) {
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            }
+            return new ResponseEntity<>(myJournalEntry.get(), HttpStatus.OK);
+        }
+        catch (Exception e){
+            System.out.println(e.getMessage());
+            return new ResponseEntity<>( HttpStatus.BAD_REQUEST);
+        }
+
+
+    }
+
+
+    @DeleteMapping("/{myId}")
+    public ResponseEntity<?> deleteById(@PathVariable ObjectId myId){
+
+
+        try{
+
+            Optional<JournalEntry> journalEntry = journalEntryService.findById(myId);
+            if(journalEntry.isEmpty()){
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            }
+            journalEntryService.deleteById(myId);
+
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            return new ResponseEntity<>( HttpStatus.BAD_REQUEST);
+        }
 
     }
     @PutMapping("/{myId}")
-    public ResponseEntity<JournalEntry> updateById(@PathVariable Long myId, @RequestBody JournalEntry myEntry){
+    public Optional<JournalEntry> updateById(@PathVariable ObjectId myId, @RequestBody JournalEntry myEntry){
 
-        journalEntries.put(myId,myEntry);
+            Optional<JournalEntry> old = journalEntryService.findById(myId);
 
-        return ResponseEntity.ok(journalEntries.get(myId));
+            if(old.isPresent()){
+                old.get().setTitle(myEntry.getTitle() != null && myEntry.getTitle() != "" ? myEntry.getTitle() : old.get().getTitle() );
+                old.get().setContent(myEntry.getContent() != null && myEntry.getContent() != "" ? myEntry.getContent() : old.get().getContent() );
+
+                journalEntryService.save(old.get());
+            }
+
+
+           return old;
 
     }
 

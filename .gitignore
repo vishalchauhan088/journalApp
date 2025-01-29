@@ -44,6 +44,7 @@ build/
 *.pid
 *.swp
 
+src/main/resources/application.properties
 
 
 # Miscellaneous

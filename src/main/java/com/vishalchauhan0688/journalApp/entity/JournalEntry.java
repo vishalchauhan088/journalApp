@@ -1,35 +1,33 @@
 package com.vishalchauhan0688.journalApp.entity;
 
+
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
+import lombok.*;
+import org.bson.types.ObjectId;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+import java.time.LocalDateTime;
+import java.util.Date;
+
+@Document(collection = "journal_entries")
+//@Getter
+//@Setter
+//@ToString
+//@EqualsAndHashCode
+@Data
+// this @data is combination all above
+
 public class JournalEntry {
 
-    private long id;
+    @Id
+    @JsonSerialize(using = ToStringSerializer.class)
+    private ObjectId id;
+    @NonNull
     private String title;
     private String content;
+    private LocalDateTime date;
 
-    public String getTitle() {
-        return title;
-    }
 
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
-    public long getId() {
-        return id;
-    }
-
-    public void setId(long id) {
-        this.id = id;
-    }
-
-    public String getContent() {
-        return content;
-    }
-
-    public void setContent(String content) {
-        this.content = content;
-    }
-    public String toString(){
-        return "id:" + this.id + "\ttitle" + this.title + "\tcontent: " + this.content;
-    }
 }
